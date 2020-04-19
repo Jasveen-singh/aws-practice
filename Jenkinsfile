@@ -1,5 +1,8 @@
 pipeline {
     agent any 
+	options {
+        timeout(time: 5) 
+    }
     stages {
         stage('Repo Clone') { 
             steps {
@@ -11,12 +14,14 @@ sh "aws cloudformation create-stack --stack-name myVPCTestStack --template-body 
         }
         stage('Verify') { 
             steps {
-                sh "ls"
+			while(true)
+                sh "aws cloudformation describe-stacks --stack-name myVPCTestStack | grep CREATE_COMPLETE"
+				print "Checking for stack creation status"
             }
         }
         stage('Deploy') { 
             steps {
-               sh "ls"
+               sh "aws cloudformation describe-stacks --stack-name myVPCTestStack"
             }
         }
     }
