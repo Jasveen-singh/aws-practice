@@ -14,7 +14,7 @@ sh "aws cloudformation create-stack --stack-name myVPCTestStack --template-body 
         }
         stage('Verify') { 
             steps {
-			while(true)
+			sh 'sleep 300'
                 sh "aws cloudformation describe-stacks --stack-name myVPCTestStack | grep CREATE_COMPLETE"
 				print "Checking for stack creation status"
             }
