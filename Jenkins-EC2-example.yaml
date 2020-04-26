@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: Allow http to client host 
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  IAMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+        Path: /
+        Roles: 
+         - custom-cf-role
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0323c3dd2da7fb37d #  AWS LInux 64 bit image in N.Virginia
+      UserData:
+        'Fn::Base64': 
+          !Sub |
+            #!/bin/bash
+            yum -y update
+            
+            # install apache
+            yum install httpd24 -y  
+            yum install java-1.8.0-openjdk.x86_64 -y
+            wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+            rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+            yum install jenkins -y
+            
+            # start server
+            service httpd start
+            chkconfig httpd on
+            #start Jenkins 
+            systemctl start jenkins
+      SecurityGroups:
+        - !Ref EC2SecurityGroup
+      IamInstanceProfile: !Ref IAMInstanceProfile 
+      KeyName: "free-ec2-key"
+      Tags:
+        - Key: Name
+          Value: Jenkins-EC2-CFN
+        - Key: Type
+          Value: Jenkins Example
+Outputs:
+  PublicInstanceIP:
+    Description: The publi ip of Instance 
+    Value: !GetAtt Ec2Instance.PublicIp      
